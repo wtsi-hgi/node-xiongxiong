@@ -29,7 +29,7 @@ module.exports = function(privateKey, lifetime) {
                 expiration = Math.floor(Date.now() / 1000) + lifetime,
                 message    = [data, expiration, salt.toString('base64')].join(':');
             
-            // Generate SHA1 HMAC of user:expiration:session:salt
+            // Generate SHA1 HMAC of data:expiration:salt
             hmac.setEncoding('base64');
             hmac.end(message);
             var password = hmac.read();
@@ -52,13 +52,10 @@ module.exports = function(privateKey, lifetime) {
       switch (arguments.length) {
         case 1:
           // Split bearer token and validate as basic auth
-          var accessToken = (new Buffer(arguments[0], 'base64'))
-                              .toString()
-                              .split(':');
+          var accessToken = (new Buffer(arguments[0], 'base64')).toString().split(':');
 
           var basicPassword = accessToken.pop(),
-              basicLogin    = (new Buffer(accessToken.join(':')))
-                                .toString('base64');
+              basicLogin    = (new Buffer(accessToken.join(':'))) .toString('base64');
 
           valid = this.isValid(basicLogin, basicPassword);
 
