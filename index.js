@@ -9,6 +9,7 @@ var util   = require('util'),
 
 module.exports = function(privateKey, lifetime) {
   lifetime = parseInt(lifetime || 3600, 10);
+  var getHMAC = function() { return crypto.createHmac('sha1', privateKey); };
 
   return {
     create: function(data, callback) {
@@ -25,7 +26,7 @@ module.exports = function(privateKey, lifetime) {
             callback(err, null);
           
           } else {
-            var hmac       = crypto.createHmac('sha1', privateKey),
+            var hmac       = getHMAC(),
                 expiration = Math.floor(Date.now() / 1000) + lifetime,
                 message    = [data, expiration, salt.toString('base64')].join(':');
             
@@ -55,7 +56,7 @@ module.exports = function(privateKey, lifetime) {
           var accessToken = (new Buffer(arguments[0], 'base64')).toString().split(':');
 
           var basicPassword = accessToken.pop(),
-              basicLogin    = (new Buffer(accessToken.join(':'))) .toString('base64');
+              basicLogin    = (new Buffer(accessToken.join(':'))).toString('base64');
 
           valid = this.isValid(basicLogin, basicPassword);
 
@@ -76,7 +77,7 @@ module.exports = function(privateKey, lifetime) {
             valid = false;
           
           } else {
-            var hmac = crypto.createHmac('sha1', privateKey);
+            var hmac = getHMAC();
 
             // Generate SHA1 HMAC of basicLogin to check against
             hmac.setEncoding('base64');
