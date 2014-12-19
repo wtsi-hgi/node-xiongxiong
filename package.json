@@ -1,9 +1,9 @@
 {
   "author": "Christopher Harrison",
   "name": "xiongxiong",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "license": "AGPLv3",
-  "description": "Bearer token generator and authenticator",
+  "description": "Bearer token generator and validator",
   "main": "index.js",
   "repository": {
     "type": "git",

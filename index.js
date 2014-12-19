@@ -27,7 +27,7 @@ module.exports = function(privateKey, lifetime) {
           } else {
             var hmac       = crypto.createHmac('sha1', privateKey),
                 expiration = Math.floor(Date.now() / 1000) + lifetime,
-                message    = [data, salt.toString('base64')].join(':');
+                message    = [data, expiration, salt.toString('base64')].join(':');
             
             // Generate SHA1 HMAC of user:expiration:session:salt
             hmac.setEncoding('base64');
@@ -46,8 +46,55 @@ module.exports = function(privateKey, lifetime) {
       }
     },
 
-    validate: function(/* bearer/basic auth data */) {
-      // TODO
+    isValid: function(/* bearer/basic auth data */) {
+      var valid = false;
+
+      switch (arguments.length) {
+        case 1:
+          // Split bearer token and validate as basic auth
+          var accessToken = (new Buffer(arguments[0], 'base64'))
+                              .toString()
+                              .split(':');
+
+          var basicPassword = accessToken.pop(),
+              basicLogin    = (new Buffer(accessToken.join(':')))
+                                .toString('base64');
+
+          valid = this.isValid(basicLogin, basicPassword);
+
+          break;
+
+        case 2:
+          // Basic authentication
+          var basicLogin    = (new Buffer(arguments[0], 'base64')).toString(),
+              extracted     = basicLogin.split(':'),
+              basicPassword = arguments[1];
+
+          // Expiration is penultimate element
+          // n.b., JavaScript Date in ms, hence x1000 on Unix epoch
+          var expiration = parseInt(extracted.slice(-2, -1)[0], 10) * 1000;
+
+          if (Date.now() > expiration) {
+            // Expired
+            valid = false;
+          
+          } else {
+            var hmac = crypto.createHmac('sha1', privateKey);
+
+            // Generate SHA1 HMAC of basicLogin to check against
+            hmac.setEncoding('base64');
+            hmac.end(basicLogin);
+
+            valid = (basicPassword == hmac.read());
+          }
+
+          break;
+
+        default:
+          break;
+      }
+
+      return valid;
     }
   };
 };

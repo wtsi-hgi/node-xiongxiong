@@ -71,6 +71,9 @@ xiongxiong.create([userName, sessionID], function(err, token) {
 });
 ```
 
+n.b., Don't put `:`s in your seed data; they act as delimiters and
+spurious ones will probably mess up with the validation.
+
 ## `xiongxiong.isValid(accessToken)`
 ## `xiongxiong.isValid(basicLogin, basicPassword)`
 
