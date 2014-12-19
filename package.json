@@ -1,0 +1,12 @@
+{
+  "author": "Christopher Harrison",
+  "name": "xiongxiong",
+  "version": "0.0.1",
+  "license": "TBC",
+  "description": "Bearer token generator and authenticator",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wtsi-hgi/node-xiongxiong.git"
+  }
+}
