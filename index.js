@@ -47,35 +47,49 @@ module.exports = function(privateKey, lifetime) {
       }
     },
 
-    isValid: function(/* bearer/basic auth data */) {
-      var valid = false;
+    extract: function(/* bearer/basic auth data */) {
+      var output = {isValid: false};
 
       switch (arguments.length) {
         case 1:
-          // Split bearer token and validate as basic auth
+          // Split bearer token and extract as basic auth
           var accessToken = (new Buffer(arguments[0], 'base64')).toString().split(':');
 
           var basicPassword = accessToken.pop(),
               basicLogin    = (new Buffer(accessToken.join(':'))).toString('base64');
 
-          valid = this.isValid(basicLogin, basicPassword);
+          output = this.extract(basicLogin, basicPassword);
 
           break;
 
         case 2:
-          // Basic authentication
+          // Basic authentication data
           var basicLogin    = (new Buffer(arguments[0], 'base64')).toString(),
               extracted     = basicLogin.split(':'),
               basicPassword = arguments[1];
 
-          // Expiration is penultimate element
-          // n.b., JavaScript Date in ms, hence x1000 on Unix epoch
-          var expiration = parseInt(extracted.slice(-2, -1)[0], 10) * 1000;
+          // We don't want the salt
+          extracted.pop();
 
-          if (Date.now() > expiration) {
+          output = {
+            // Expiration is penultimate element
+            // n.b., JavaScript Date in ms, hence x1000 on Unix epoch
+            expiration: new Date(parseInt(extracted.pop(), 10) * 1000),
+
+            // Convert to string if we only have one element
+            data: (function() {
+              if (extracted.length == 1) {
+                return extracted[0];
+              } else {
+                return extracted;
+              }
+            })()
+          };
+
+          if (Date.now() > output.expiration) {
             // Expired
-            valid = false;
-          
+            output.isValid = false;
+
           } else {
             var hmac = getHMAC();
 
@@ -83,7 +97,7 @@ module.exports = function(privateKey, lifetime) {
             hmac.setEncoding('base64');
             hmac.end(basicLogin);
 
-            valid = (basicPassword == hmac.read());
+            output.isValid = (basicPassword == hmac.read());
           }
 
           break;
@@ -92,7 +106,7 @@ module.exports = function(privateKey, lifetime) {
           break;
       }
 
-      return valid;
+      return output;
     }
   };
 };

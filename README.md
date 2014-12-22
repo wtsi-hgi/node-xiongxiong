@@ -74,18 +74,26 @@ xiongxiong.create([userName, sessionID], function(err, token) {
 n.b., Don't put `:`s in your seed data; they act as delimiters and
 spurious ones will probably mess up with the validation.
 
-## `xiongxiong.isValid(accessToken)`
-## `xiongxiong.isValid(basicLogin, basicPassword)`
+## `xiongxiong.extract(accessToken)`
+## `xiongxiong.extract(basicLogin, basicPassword)`
 
-Validates the bearer token/basic authentication data passed to it,
-returning a Boolean.
+Extract the seed data, expiration and validate from the bearer
+token/basic authentication pair. Returns a hash with the following keys:
+
+* `data` The original seed data, which will be an array split by `:`
+  characters, wherever possible (a string, otherwise).
+* `expiration` The expiration time.
+* `isValid` The validity of the token/basic pair.
 
 For example:
 
 ```js
-if (xiongxiong.isValid(someToken)) {
-  // Token validated
-  console.log('Get in the van!');
+var tokenData = xiongxiong.extract(someToken);
+
+if (tokenData.isValid) {
+  console.log('Token expires in',
+              tokenData.expiration - Math.floor(Date.now() / 1000)
+              'seconds.');
 }
 ```
 
