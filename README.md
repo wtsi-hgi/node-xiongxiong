@@ -82,8 +82,8 @@ token/basic authentication pair. Returns a hash with the following keys:
 
 * `data` The original seed data, which will be an array split by `:`
   characters, wherever possible (a string, otherwise).
-* `expiration` The expiration time.
-* `isValid` The validity of the token/basic pair.
+* `expiration` The expiration time (`Date` object).
+* `isValid` The validity of the token/basic pair (`Boolean`).
 
 For example:
 
@@ -92,7 +92,7 @@ var tokenData = xiongxiong.extract(someToken);
 
 if (tokenData.isValid) {
   console.log('Token expires in',
-              tokenData.expiration - Math.floor(Date.now() / 1000)
+              Math.floor((tokenData.expiration - Date.now()) / 1000)
               'seconds.');
 }
 ```
