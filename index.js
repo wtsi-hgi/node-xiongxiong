@@ -12,30 +12,20 @@ module.exports = function(/* privateKey, lifetime, algorithm OR hash */) {
 
   // Parse arguments
   if (arguments.length) {
-    if (arguments[0].privateKey) {
-      // Hash
-      privateKey = arguments[0].privateKey;
-      lifetime   = parseInt(arguments[0].lifetime, 10);
-      algorithm  = arguments[0].algorithm;
+    // Try to get options from hash first, then fallback to positional
+    // and finally, where appropriate, to defaults
+    privateKey = arguments[0].privateKey        || arguments[0];
+    lifetime   = parseInt(arguments[0].lifetime || arguments[1], 10) || 3600;
+    algorithm  = arguments[0].algorithm         || arguments[2]      || 'sha1';
 
-    } else if (typeof arguments[0] == 'string' || arguments[0] instanceof Buffer) {
-      // Positional arguments
-      privateKey = arguments[0];
-      lifetime   = parseInt(arguments[1], 10);
-      algorithm  = arguments[2];
-
-    } else {
-      // No valid arguments
-      throw new TypeError('Invalid arguments');
+    // Private key must be a string or a buffer
+    if (!(typeof privateKey == 'string' || privateKey instanceof Buffer)) {
+      throw new TypeError('Invalid arguments: Private key must be a string or buffer');
     }
   } else {
     // Need at least a private key  
     throw new Error('No private key specified');
   }
-
-  // Set defaults
-  lifetime  = lifetime  || 3600;
-  algorithm = algorithm || 'sha1';
 
   var getHMAC = (function() {
     // Check algorithm is supported
@@ -56,8 +46,8 @@ module.exports = function(/* privateKey, lifetime, algorithm OR hash */) {
       // Flatten array
       if (util.isArray(data)) { data = data.join(':'); }
 
-      if (typeof(data) != 'string') {
-        callback(new TypeError('Seed data must be a string or array of strings'), null);
+      if (typeof data != 'string') {
+        callback(new TypeError('Invalid arguments: Seed data must be a string or array of strings'), null);
 
       } else {
         // Create a 48-bit salt
@@ -105,7 +95,7 @@ module.exports = function(/* privateKey, lifetime, algorithm OR hash */) {
               extracted     = basicLogin.split(':'),
               basicPassword = arguments[1];
 
-          // We don't want the salt
+          // Pass the salt
           extracted.pop();
 
           output = {
