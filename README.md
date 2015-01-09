@@ -19,7 +19,9 @@ Bear, bearer, bearer token... Yeah, it's tenuous, but deal with it!
 # Documentation
 
 The module *must* be instantiated with a private key and, optionally, a
-token lifetime (in seconds).
+token lifetime (in seconds; defaults to 3600) and hashing algorithm
+(defaults to `sha1`). These can be provided as positional arguments, or
+as a hash.
 
 For example:
 
@@ -27,14 +29,25 @@ For example:
 var fs         = require('fs'),
     privateKey = fs.readFileSync('/path/to/private.key');
 
-var xiongxiong = require('xiongxiong')(privateKey, 3600);
+var xiongxiong = require('xiongxiong')(privateKey, 3600, 'md5');
+```
+
+...or:
+
+```js
+var xiongxiong = require('xiongxiong')({
+  privateKey: 'My hovercraft is full of eels!',
+  lifetime:   300,
+  algorithm:  'whirlpool'
+});
 ```
 
 The private key can be any buffer or string; it needn't be read from the
 filesystem (but that's probably a good idea). A simple key generation
 script is also provided (see below).
 
-The token lifetime defaults to one hour, if omitted.
+An error will be thrown if the hashing algorithm is unsupported on your
+system.
 
 ## `xiongxiong.create(data, callback)`
 
@@ -55,9 +68,9 @@ The token data available to the callback is a hash, with keys:
 
 `basicLogin` is the Base64 encoding of the input `data`, with a
 cryptographic salt, as a fallback for when HTTP Bearer authentication is
-not available. `basicPassword` is the SHA1 HMAC of `basicLogin` with the
-private key. The `accessToken` is simply these two pieces concatenated,
-again with an interposed `:`.
+not available. `basicPassword` is the HMAC of `basicLogin` with the
+private key using the specified hashing algorithm. The `accessToken` is
+simply these two pieces concatenated, again with an interposed `:`.
 
 For example:
 
@@ -113,7 +126,7 @@ A simple wrapper script around `dd` to create a private key file from
 
 # License
 
-Copyright (c) 2014 Genome Research Limited
+Copyright (c) 2014, 2015 Genome Research Limited
 
 This program is free software: you can redistribute it and/or modify it
 under the terms of the GNU Affero General Public License as published by

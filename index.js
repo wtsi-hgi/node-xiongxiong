@@ -7,12 +7,37 @@
 var util   = require('util'),
     crypto = require('crypto');
 
-module.exports = function(privateKey, lifetime, algorithm) {
-  lifetime = parseInt(lifetime, 10) || 3600;
+module.exports = function(/* privateKey, lifetime, algorithm OR hash */) {
+  var privateKey, lifetime, algorithm;
+
+  // Parse arguments
+  if (arguments.length) {
+    if (arguments[0].privateKey) {
+      // Hash
+      privateKey = arguments[0].privateKey;
+      lifetime   = parseInt(arguments[0].lifetime, 10);
+      algorithm  = arguments[0].algorithm;
+
+    } else if (typeof arguments[0] == 'string' || arguments[0] instanceof Buffer) {
+      // Positional arguments
+      privateKey = arguments[0];
+      lifetime   = parseInt(arguments[1], 10);
+      algorithm  = arguments[2];
+
+    } else {
+      // No valid arguments
+      throw new TypeError('Invalid arguments');
+    }
+  } else {
+    // Need at least a private key  
+    throw new Error('No private key specified');
+  }
+
+  // Set defaults
+  lifetime  = lifetime  || 3600;
+  algorithm = algorithm || 'sha1';
 
   var getHMAC = (function() {
-    algorithm = algorithm || 'sha1';
-
     // Check algorithm is supported
     if (crypto.getHashes().indexOf(algorithm) < 0) {
       throw new Error('Unsupported hash algorithm \'' + algorithm + '\'');
