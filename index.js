@@ -2,14 +2,26 @@
 // Bearer token generator and validator
 
 // AGPLv3 or later
-// Copyright (c) 2014 Genome Research Limited
+// Copyright (c) 2014, 2015 Genome Research Limited
 
 var util   = require('util'),
     crypto = require('crypto');
 
-module.exports = function(privateKey, lifetime) {
-  lifetime = parseInt(lifetime || 3600, 10);
-  var getHMAC = function() { return crypto.createHmac('sha1', privateKey); };
+module.exports = function(privateKey, lifetime, algorithm) {
+  lifetime = parseInt(lifetime, 10) || 3600;
+
+  var getHMAC = (function() {
+    algorithm = algorithm || 'sha1';
+
+    // Check algorithm is supported
+    if (crypto.getHashes().indexOf(algorithm) < 0) {
+      throw new Error('Unsupported hash algorithm \'' + algorithm + '\'');
+    }
+
+    return function() {
+      return crypto.createHmac(algorithm, privateKey);
+    };
+  })();
 
   return {
     create: function(data, callback) {
@@ -76,14 +88,8 @@ module.exports = function(privateKey, lifetime) {
             // n.b., JavaScript Date in ms, hence x1000 on Unix epoch
             expiration: new Date(parseInt(extracted.pop(), 10) * 1000),
 
-            // Convert to string if we only have one element
-            data: (function() {
-              if (extracted.length == 1) {
-                return extracted[0];
-              } else {
-                return extracted;
-              }
-            })()
+            // Convert to string if we only have one element remaining
+            data: extracted.length == 1 ? extracted[0] : extracted
           };
 
           if (Date.now() > output.expiration) {
