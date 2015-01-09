@@ -43,8 +43,11 @@ module.exports = function(/* privateKey, lifetime, algorithm OR hash */) {
       throw new Error('Unsupported hash algorithm \'' + algorithm + '\'');
     }
 
-    return function() {
-      return crypto.createHmac(algorithm, privateKey);
+    return function(message) {
+      var hmac = crypto.createHmac(algorithm, privateKey);
+      hmac.setEncoding('base64');
+      hmac.end(message);
+      return hmac.read();
     };
   })();
 
@@ -63,15 +66,12 @@ module.exports = function(/* privateKey, lifetime, algorithm OR hash */) {
             callback(err, null);
           
           } else {
-            var hmac       = getHMAC(),
-                expiration = Math.floor(Date.now() / 1000) + lifetime,
-                message    = [data, expiration, salt.toString('base64')].join(':');
-            
-            // Generate SHA1 HMAC of data:expiration:salt
-            hmac.setEncoding('base64');
-            hmac.end(message);
-            var password = hmac.read();
+            var expiration = Math.floor(Date.now() / 1000) + lifetime,
+                message    = [data, expiration, salt.toString('base64')].join(':'),
 
+                // Generate HMAC of data:expiration:salt
+                password   = getHMAC(message);
+            
             // Return token and basic authentication pair
             callback(null, {
               expiration:    expiration,  // Unix epoch
@@ -122,13 +122,9 @@ module.exports = function(/* privateKey, lifetime, algorithm OR hash */) {
             output.isValid = false;
 
           } else {
-            var hmac = getHMAC();
-
-            // Generate SHA1 HMAC of basicLogin to check against
-            hmac.setEncoding('base64');
-            hmac.end(basicLogin);
-
-            output.isValid = (basicPassword == hmac.read());
+            // Generate HMAC of basicLogin to check against
+            var hmac = getHMAC(basicLogin);
+            output.isValid = (basicPassword == hmac);
           }
 
           break;
