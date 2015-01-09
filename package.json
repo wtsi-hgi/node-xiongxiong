@@ -1,10 +1,13 @@
 {
   "author": "Christopher Harrison",
   "name": "xiongxiong",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "license": "AGPLv3",
   "description": "Bearer token generator and validator",
   "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/wtsi-hgi/node-xiongxiong.git"
