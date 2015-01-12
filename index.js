@@ -8,7 +8,8 @@ var util   = require('util'),
     crypto = require('crypto');
 
 module.exports = function(/* privateKey, lifetime, algorithm OR hash */) {
-  var privateKey, lifetime, algorithm;
+  var privateKey, lifetime, algorithm,
+      xiongxiong;
 
   // Parse arguments
   if (arguments.length) {
@@ -41,8 +42,9 @@ module.exports = function(/* privateKey, lifetime, algorithm OR hash */) {
     };
   })();
 
-  return {
-    create: function(data, callback) {
+  // Return value
+  xiongxiong = {
+    encode: function(data, callback) {
       // Flatten array
       if (util.isArray(data)) { data = data.join(':'); }
 
@@ -74,18 +76,18 @@ module.exports = function(/* privateKey, lifetime, algorithm OR hash */) {
       }
     },
 
-    extract: function(/* bearer/basic auth data */) {
+    decode: function(/* bearer/basic auth data */) {
       var output = {isValid: false};
 
       switch (arguments.length) {
         case 1:
-          // Split bearer token and extract as basic auth
+          // Split bearer token and decode as basic auth
           var accessToken = (new Buffer(arguments[0], 'base64')).toString().split(':');
 
           var basicPassword = accessToken.pop(),
               basicLogin    = (new Buffer(accessToken.join(':'))).toString('base64');
 
-          output = this.extract(basicLogin, basicPassword);
+          output = this.decode(basicLogin, basicPassword);
 
           break;
 
@@ -130,4 +132,10 @@ module.exports = function(/* privateKey, lifetime, algorithm OR hash */) {
       return output;
     }
   };
+
+  // Set aliases (legacy API)
+  xiongxiong.create  = xiongxiong.encode;
+  xiongxiong.extract = xiongxiong.decode;
+
+  return xiongxiong;
 };
