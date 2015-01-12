@@ -49,12 +49,12 @@ var assert     = require('assert'),
     // Test bearer token
     token = xx.extract(t.accessToken);
     assert.equal(token.data, strSeed);
-    assert.equal(token.isValid, true);
+    assert.equal(token.isValid(), true);
 
     // Test auth pair
     token = xx.extract(t.basicLogin, t.basicPassword);
     assert.equal(token.data, strSeed);
-    assert.equal(token.isValid, true);
+    assert.equal(token.isValid(), true);
   });
 })();
 
@@ -72,12 +72,12 @@ var assert     = require('assert'),
     // Test bearer token
     token = xx.extract(t.accessToken);
     assert.deepEqual(token.data, arrSeed);
-    assert.equal(token.isValid, true);
+    assert.equal(token.isValid(), true);
 
     // Test auth pair
     token = xx.extract(t.basicLogin, t.basicPassword);
     assert.deepEqual(token.data, arrSeed);
-    assert.equal(token.isValid, true);
+    assert.equal(token.isValid(), true);
   });
 })();
 

@@ -1,5 +1,5 @@
 // Xiongxiong
-// Bearer token generator and validator
+// Bearer token codec
 
 // AGPLv3 or later
 // Copyright (c) 2014, 2015 Genome Research Limited
@@ -104,18 +104,22 @@ module.exports = function(/* privateKey, lifetime, algorithm OR hash */) {
             expiration: new Date(parseInt(extracted.pop(), 10) * 1000),
 
             // Convert to string if we only have one element remaining
-            data: extracted.length == 1 ? extracted[0] : extracted
+            data: extracted.length == 1 ? extracted[0] : extracted,
+
+            // Validity check
+            isValid: (function() {
+              if (basicPassword == getHMAC(basicLogin)) {
+                return function() {
+                  // Match: Valid until expiration
+                  return Date.now() <= this.expiration;
+                };
+
+              } else {
+                // No match: Invalid
+                return function() { return false; }
+              }
+            })()
           };
-
-          if (Date.now() > output.expiration) {
-            // Expired
-            output.isValid = false;
-
-          } else {
-            // Generate HMAC of basicLogin to check against
-            var hmac = getHMAC(basicLogin);
-            output.isValid = (basicPassword == hmac);
-          }
 
           break;
 
