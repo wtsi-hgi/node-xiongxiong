@@ -94,9 +94,11 @@ var assert     = require('assert'),
 
 // Expiration
 (function() {
-  var xx   = xiongxiong('foo'),
-      seed = 'foo bar',
-      now  = new Date();
+  var lifetime = parseInt((Math.random() * 3) + 3, 10),  // Lifetime between 3-5 seconds
+
+      xx       = xiongxiong('foo', lifetime),
+      seed     = 'foo bar',
+      now      = new Date();
 
   xx.create(seed, function(err, t) {
     var token;
@@ -106,6 +108,12 @@ var assert     = require('assert'),
 
     // Token and expected expiration shouldn't differ by more than 1s
     token = xx.extract(t.accessToken);
-    assert.ok(Math.abs(3600000 - (token.expiration - now)) < 1000);
+    assert.ok(Math.abs((lifetime * 1000) - (token.expiration - now)) < 1000);
+    assert.equal(token.isValid(), true);
+
+    // Wait for lifetime + 1s, then we should have passed best before
+    setTimeout(function() {
+      assert.equal(token.isValid(), false);
+    }, (lifetime + 1) * 1000);
   });
 })();
