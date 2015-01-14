@@ -1,7 +1,7 @@
 {
   "author": "Christopher Harrison",
   "name": "xiongxiong",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "license": "AGPLv3",
   "description": "Bearer token codec",
   "main": "index.js",
@@ -10,6 +10,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/wtsi-hgi/node-xiongxiong.git"
+    "url": "https://github.com/wtsi-hgi/xiongxiong.git"
   }
 }

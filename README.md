@@ -124,6 +124,19 @@ NPM:
 
     npm test
 
+# Decoders
+
+Besides the codec for Node.js, [other decoders are available](decoders/)
+for different languages and environments:
+
+* Python
+
+n.b., These decoders are *not* available in the NPM repository, for
+brevity's sake, but can always be found on GitHub.
+
+*Made a decoder for your favourite language? Then why not submit a pull
+request!*
+
 # `make-key.sh`
 
 A simple wrapper script around `dd` to create a private key file from
