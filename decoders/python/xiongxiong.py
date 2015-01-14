@@ -1,12 +1,35 @@
-# Xiongxiong Bearer Token Decoder for Python
+'''
+Xiongxiong Bearer Token Decoder for Python
 
-# AGPLv3 or later
-# Copyright (c) 2015 Genome Research Limited
+AGPLv3 or later
+Copyright (c) 2015 Genome Research Limited
+'''
 
 from datetime import datetime
 from base64   import b64encode, b64decode
 import hashlib
 import hmac
+
+def silence(fallback = None):
+  ''' Decorator to silence fussy functions that complain too much '''
+  def wrapper(fn):
+    def _(*args, **kwargs):
+      try:
+        return fn(*args, **kwargs)
+      except:
+        return fallback
+    return _
+  return wrapper
+
+@silence()
+def encode(this):
+  ''' Base64 encode '''
+  return b64encode(this)
+
+@silence()
+def decode(this):
+  ''' Base64 decode '''
+  return b64decode(this)
 
 # n.b., This could just as well be a dictionary, rather than a class,
 # but this way seems a bit clearer...
@@ -56,25 +79,26 @@ class Xiongxiong(object):
       '''
       secureHash = getattr(hashlib, algorithm)
       authCode   = hmac.new(privateKey, message, secureHash)
-      return b64encode(authCode.digest())
+      return encode(authCode.digest())
 
     self._getHMAC = getHMAC
 
+  @silence(_Token(False))
   def decode(self, *args):
     ''' Decode the bearer token/basic authentication pair '''
 
     if len(args) == 1:
       # Split bearer token and decode as basic auth
-      accessToken = b64decode(args[0]).split(':')
+      accessToken = decode(args[0]).split(':')
 
       basicPassword = accessToken.pop()
-      basicLogin    = b64encode(':'.join(accessToken))
+      basicLogin    = encode(':'.join(accessToken))
 
       return self.decode(basicLogin, basicPassword)
 
     elif len(args) == 2:
       # Basic authentication pair
-      basicLogin    = b64decode(args[0])
+      basicLogin    = decode(args[0])
       extracted     = basicLogin.split(':')
       basicPassword = args[1]
       
@@ -84,20 +108,18 @@ class Xiongxiong(object):
       # Validity check
       if basicPassword == self._getHMAC(basicLogin):
         # We're good!
-        authenticated = {
+        return _Token({
           'expiration': datetime.fromtimestamp(int(extracted.pop())),
           'data':       extracted[0] if len(extracted) == 1 else extracted
-        }
+        })
 
       else:
         # Epic fail
-        authenticated = False
+        raise Exception('Cannot authenticate')
 
     else:
       # WTF?
-      authenticated = False
-
-    return _Token(authenticated)
+      raise Exception('Invalid arguments')
 
 # Our module shouldn't run standalone
 if __name__ == '__main__':
