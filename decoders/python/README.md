@@ -28,10 +28,10 @@ token/basic authentication pair. Returns a `_Token` object (see below).
 
 ## `_Token` Class
 
-This class is returned by the decoding function and shouldn't be used
-directly. Its members are, however, important:
+As instantiation of this class is returned by the decoding function and
+shouldn't be used directly. Its members are, however, important:
 
-* `.data` The original seed data, which will be an array split by `:`
+* `.data` The original seed data, which will be split into a list by `:`
   characters, wherever possible (a string, otherwise).
 * `.expiration` The expiration time (`datetime.datetime`)
 * `.isValid()` The validity of the token/basic pair (function).
