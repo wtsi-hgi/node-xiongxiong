@@ -62,7 +62,7 @@ The data provided to the function must be a string or an array of
 strings. In the latter case, the array is flattened with interposing `:`
 characters.
 
-The token data available to the callback is a hash, with keys:
+The token data available to the callback is a frozen hash, with keys:
 * `expiration` The token's expiration time (Unix epoch)
 * `accessToken` The token itself
 * `basicLogin` Basic authentication login
@@ -95,27 +95,28 @@ spurious ones will probably mess up with the validation.
 *Alias `xiongxiong.extract`*
 
 Decode the seed data, expiration and validate from the bearer
-token/basic authentication pair. Returns a hash with the following keys:
+token/basic authentication pair. Returns a frozen hash with the
+following keys:
 
 * `data` The original seed data, which will be an array split by `:`
   characters, wherever possible (a string, otherwise).
 * `expiration` The expiration time (`Date` object).
-* `isValid` The validity of the token/basic pair (`Function`).
+* `valid` The validity of the token/basic pair (`Boolean`).
 
 For example:
 
 ```js
 var tokenData = xiongxiong.decode(someBearerToken);
 
-if (tokenData.isValid()) {
+if (tokenData.valid) {
   console.log('Token expires in %d seconds.',
               Math.floor((tokenData.expiration - Date.now()) / 1000));
 }
 ```
 
-The validation function (`isValid`) will return `false` if the token
-can't be authenticated, otherwise it will test whether the token has
-passed its best before date.
+The validity property (`valid`) will return `false` if the token can't
+be authenticated, otherwise it will test whether the token has passed
+its best before date.
 
 ## Testing
 

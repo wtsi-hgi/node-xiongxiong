@@ -49,12 +49,12 @@ var assert     = require('assert'),
     // Test bearer token
     token = xx.decode(t.accessToken);
     assert.equal(token.data, strSeed);
-    assert.equal(token.isValid(), true);
+    assert.equal(token.valid, true);
 
     // Test auth pair
     token = xx.decode(t.basicLogin, t.basicPassword);
     assert.equal(token.data, strSeed);
-    assert.equal(token.isValid(), true);
+    assert.equal(token.valid, true);
   });
 })();
 
@@ -72,12 +72,12 @@ var assert     = require('assert'),
     // Test bearer token
     token = xx.decode(t.accessToken);
     assert.deepEqual(token.data, arrSeed);
-    assert.equal(token.isValid(), true);
+    assert.equal(token.valid, true);
 
     // Test auth pair
     token = xx.decode(t.basicLogin, t.basicPassword);
     assert.deepEqual(token.data, arrSeed);
-    assert.equal(token.isValid(), true);
+    assert.equal(token.valid, true);
   });
 })();
 
@@ -109,11 +109,11 @@ var assert     = require('assert'),
     // Token and expected expiration shouldn't differ by more than 1s
     token = xx.decode(t.accessToken);
     assert.ok(Math.abs((lifetime * 1000) - (token.expiration - now)) < 1000);
-    assert.equal(token.isValid(), true);
+    assert.equal(token.valid, true);
 
     // Wait for lifetime + 1s, then we should have passed best before
     setTimeout(function() {
-      assert.equal(token.isValid(), false);
+      assert.equal(token.valid, false);
     }, (lifetime + 1) * 1000);
   });
 })();
@@ -132,11 +132,11 @@ var assert     = require('assert'),
     // Test bearer token
     token = xx.extract(t.accessToken);
     assert.equal(token.data, strSeed);
-    assert.equal(token.isValid(), true);
+    assert.equal(token.valid, true);
 
     // Test auth pair
     token = xx.extract(t.basicLogin, t.basicPassword);
     assert.equal(token.data, strSeed);
-    assert.equal(token.isValid(), true);
+    assert.equal(token.valid, true);
   });
 })();

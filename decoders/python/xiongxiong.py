@@ -6,57 +6,74 @@ Copyright (c) 2015 Genome Research Limited
 '''
 
 from datetime import datetime
-from base64   import b64encode, b64decode
+import base64
 import hashlib
 import hmac
 
-def silence(fallback = None):
-  ''' Decorator to silence fussy functions that complain too much '''
-  def wrapper(fn):
-    def _(*args, **kwargs):
-      try:
-        return fn(*args, **kwargs)
-      except:
-        return fallback
-    return _
+def stfu(fn):
+  ''' Decorator to silence fussy string functions '''
+  def wrapper(*args, **kwargs):
+    try:
+      return fn(*args, **kwargs)
+    except:
+      return ''
   return wrapper
 
-@silence()
-def encode(this):
+@stfu
+def b64encode(this):
   ''' Base64 encode '''
-  return b64encode(this)
+  return base64.b64encode(this)
 
-@silence()
-def decode(this):
+@stfu
+def b64decode(this):
   ''' Base64 decode '''
-  return b64decode(this)
+  return base64.b64decode(this)
 
-# n.b., This could just as well be a dictionary, rather than a class,
-# but this way seems a bit clearer...
-class _Token(object):
+
+class Token(object):
   '''
-  Return type from token decoding. This shouldn't be used directly. 
+  Return type from token decoder
+  n.b., This shouldn't be instantiated directly 
   '''
 
-  def __init__(self, authenticated = False):
+  def __init__(self, authenticated):
     if authenticated:
       self.data       = authenticated['data']
       self.expiration = authenticated['expiration']
-
-      # Validity is contingent upon expiration
-      self.isValid = lambda: datetime.now() <= self.expiration
 
     else:
       self.data       = None
       self.expiration = None
 
-      # Not cool
-      self.isValid = lambda: False
+  # Override getters to give us a nicer syntax
+  def __getattribute__(self, name):
+    allowed = ['data', 'expiration']
+    actual  = {}
+
+    # Actual object properties
+    for key in allowed:
+      actual[key] = object.__getattribute__(self, key)
+
+    if name == 'valid':
+      if actual['expiration']:
+        # Validity is contingent upon expiration
+        return datetime.now() <= actual['expiration']
+
+      else:
+        # Not cool
+        return False
+
+    elif name in allowed:
+      return actual[name]
+
+    else:
+      raise AttributeError
+
 
 class Xiongxiong(object):
   '''
-  Bearer token decoder; instantiate with a private key and optional hash
-  algorithm (defaults to sha1)
+  Bearer token decoder
+  Instantiate with a private key and optional hash algorithm
   '''
 
   def __init__(self, privateKey, algorithm = 'sha1'):
@@ -79,26 +96,25 @@ class Xiongxiong(object):
       '''
       secureHash = getattr(hashlib, algorithm)
       authCode   = hmac.new(privateKey, message, secureHash)
-      return encode(authCode.digest())
+      return b64encode(authCode.digest())
 
     self._getHMAC = getHMAC
 
-  @silence(_Token(False))
-  def decode(self, *args):
+  def __call__(self, *args):
     ''' Decode the bearer token/basic authentication pair '''
 
     if len(args) == 1:
       # Split bearer token and decode as basic auth
-      accessToken = decode(args[0]).split(':')
+      accessToken = b64decode(args[0]).split(':')
 
       basicPassword = accessToken.pop()
-      basicLogin    = encode(':'.join(accessToken))
+      basicLogin    = b64encode(':'.join(accessToken))
 
-      return self.decode(basicLogin, basicPassword)
+      return self(basicLogin, basicPassword)
 
     elif len(args) == 2:
       # Basic authentication pair
-      basicLogin    = decode(args[0])
+      basicLogin    = b64decode(args[0])
       extracted     = basicLogin.split(':')
       basicPassword = args[1]
       
@@ -108,18 +124,19 @@ class Xiongxiong(object):
       # Validity check
       if basicPassword == self._getHMAC(basicLogin):
         # We're good!
-        return _Token({
+        return Token({
           'expiration': datetime.fromtimestamp(int(extracted.pop())),
           'data':       extracted[0] if len(extracted) == 1 else extracted
         })
 
       else:
         # Epic fail
-        raise Exception('Cannot authenticate')
+        return Token(None)
 
     else:
       # WTF?
       raise Exception('Invalid arguments')
+
 
 # Our module shouldn't run standalone
 if __name__ == '__main__':

@@ -4,8 +4,7 @@
 // AGPLv3 or later
 // Copyright (c) 2014, 2015 Genome Research Limited
 
-var util   = require('util'),
-    crypto = require('crypto');
+var crypto = require('crypto');
 
 module.exports = function(/* privateKey, lifetime, algorithm OR hash */) {
   var privateKey, lifetime, algorithm,
@@ -46,7 +45,7 @@ module.exports = function(/* privateKey, lifetime, algorithm OR hash */) {
   xiongxiong = {
     encode: function(data, callback) {
       // Flatten array
-      if (util.isArray(data)) { data = data.join(':'); }
+      if (Array.isArray(data)) { data = data.join(':'); }
 
       if (typeof data != 'string') {
         callback(new TypeError('Invalid arguments: Seed data must be a string or array of strings'), null);
@@ -65,19 +64,19 @@ module.exports = function(/* privateKey, lifetime, algorithm OR hash */) {
                 password   = getHMAC(message);
             
             // Return token and basic authentication pair
-            callback(null, {
+            callback(null, Object.freeze({
               expiration:    expiration,  // Unix epoch
               accessToken:   (new Buffer([message, password].join(':'))).toString('base64'),
               basicLogin:    (new Buffer(message)).toString('base64'),
               basicPassword: password
-            });
+            }));
           }
         });
       }
     },
 
     decode: function(/* bearer/basic auth data */) {
-      var output = {isValid: false};
+      var output = {};
 
       switch (arguments.length) {
         case 1:
@@ -100,16 +99,31 @@ module.exports = function(/* privateKey, lifetime, algorithm OR hash */) {
           // Pass the salt
           extracted.pop();
 
-          output = {
-            // Expiration is penultimate element
-            // n.b., JavaScript Date in ms, hence x1000 on Unix epoch
-            expiration: new Date(parseInt(extracted.pop(), 10) * 1000),
+          // Expiration is penultimate element
+          // n.b., JavaScript Date in ms, hence x1000 on Unix epoch
+          Object.defineProperty(output, 'expiration', {
+            configurable: false,
+            writable:     false,
+            enumerable:   true,
 
-            // Convert to string if we only have one element remaining
-            data: extracted.length == 1 ? extracted[0] : extracted,
+            value: new Date(parseInt(extracted.pop(), 10) * 1000)
+          });
 
-            // Validity check
-            isValid: (function() {
+          // Convert to string if we only have one element remaining
+          Object.defineProperty(output, 'data', {
+            configurable: false,
+            writable:     false,
+            enumerable:   true,
+
+            value: extracted.length == 1 ? extracted[0] : extracted,
+          });
+
+          // Validity check
+          Object.defineProperty(output, 'valid', {
+            configurable: false,
+            enumerable:   true,
+
+            get: (function() {
               if (basicPassword == getHMAC(basicLogin)) {
                 return function() {
                   // Match: Valid until expiration
@@ -121,15 +135,23 @@ module.exports = function(/* privateKey, lifetime, algorithm OR hash */) {
                 return function() { return false; }
               }
             })()
-          };
+          });
 
           break;
 
         default:
+          Object.defineProperty(output, 'valid', {
+            configurable: false,
+            writable:     false,
+            enumerable:   true,
+            
+            value: false
+          });
+
           break;
       }
 
-      return output;
+      return Object.freeze(output);
     }
   };
 
@@ -137,5 +159,5 @@ module.exports = function(/* privateKey, lifetime, algorithm OR hash */) {
   xiongxiong.create  = xiongxiong.encode;
   xiongxiong.extract = xiongxiong.decode;
 
-  return xiongxiong;
+  return Object.freeze(xiongxiong);
 };
