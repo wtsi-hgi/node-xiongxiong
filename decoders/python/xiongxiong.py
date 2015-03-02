@@ -10,7 +10,8 @@ import base64
 import hashlib
 import hmac
 
-def stfu(fn):
+
+def _stfu(fn):
   ''' Decorator to silence fussy string functions '''
   def wrapper(*args, **kwargs):
     try:
@@ -19,55 +20,56 @@ def stfu(fn):
       return ''
   return wrapper
 
-@stfu
-def b64encode(this):
+@_stfu
+def _b64encode(this):
   ''' Base64 encode '''
   return base64.b64encode(this)
 
-@stfu
-def b64decode(this):
+@_stfu
+def _b64decode(this):
   ''' Base64 decode '''
   return base64.b64decode(this)
 
 
-class Token(object):
+def _tokenFactory(authenticated):
   '''
-  Return type from token decoder
-  n.b., This shouldn't be instantiated directly 
+  Build a Token class, based upon the function arguments in the closure,
+  and return an instantiation of it. This allows us return an object
+  with truly read-only properties :) These 'hoops' suggest that this is
+  probably 'unpythonic', but what can you do?!
+
+  n.b., This shouldn't be invoked directly.
   '''
 
-  def __init__(self, authenticated):
-    if authenticated:
-      self.data       = authenticated['data']
-      self.expiration = authenticated['expiration']
+  if not authenticated:
+    weAreGood = False
+    authenticated = { 'data': None, 'expiration': None }
 
-    else:
-      self.data       = None
-      self.expiration = None
+  else:
+    weAreGood = True
 
-  # Override getters to give us a nicer syntax
-  def __getattribute__(self, name):
-    allowed = ['data', 'expiration']
-    actual  = {}
+  class Token(object):
+    def __getattribute__(self, name):
+      ''' Fake attributes '''
+      if name == 'valid':
+        if weAreGood:
+          return datetime.now() <= authenticated['expiration']
 
-    # Actual object properties
-    for key in allowed:
-      actual[key] = object.__getattribute__(self, key)
+        else:
+          return False
 
-    if name == 'valid':
-      if actual['expiration']:
-        # Validity is contingent upon expiration
-        return datetime.now() <= actual['expiration']
+      if name in authenticated:
+        return authenticated[name]
 
       else:
-        # Not cool
-        return False
+        # No such attribute
+        raise AttributeError
 
-    elif name in allowed:
-      return actual[name]
-
-    else:
+    def __setattr__(self, value, name):
+      ''' We can't set any attribute values '''
       raise AttributeError
+
+  return Token()
 
 
 class Xiongxiong(object):
@@ -92,29 +94,29 @@ class Xiongxiong(object):
       '''
       Create HMAC of message using the instantiation private key and
       hashing algorithm. This is created as a closure to protect the key
-      from external access (say, if it were a public class member)
+      from external access (say, if it were a class member)
       '''
       secureHash = getattr(hashlib, algorithm)
       authCode   = hmac.new(privateKey, message, secureHash)
-      return b64encode(authCode.digest())
+      return _b64encode(authCode.digest())
 
-    self._getHMAC = getHMAC
+    self.__getHMAC = getHMAC
 
   def __call__(self, *args):
     ''' Decode the bearer token/basic authentication pair '''
 
     if len(args) == 1:
       # Split bearer token and decode as basic auth
-      accessToken = b64decode(args[0]).split(':')
+      accessToken = _b64decode(args[0]).split(':')
 
       basicPassword = accessToken.pop()
-      basicLogin    = b64encode(':'.join(accessToken))
+      basicLogin    = _b64encode(':'.join(accessToken))
 
       return self(basicLogin, basicPassword)
 
     elif len(args) == 2:
       # Basic authentication pair
-      basicLogin    = b64decode(args[0])
+      basicLogin    = _b64decode(args[0])
       extracted     = basicLogin.split(':')
       basicPassword = args[1]
       
@@ -122,16 +124,16 @@ class Xiongxiong(object):
       extracted.pop()
 
       # Validity check
-      if basicPassword == self._getHMAC(basicLogin):
+      if basicPassword == self.__getHMAC(basicLogin):
         # We're good!
-        return Token({
+        return _tokenFactory({
           'expiration': datetime.fromtimestamp(int(extracted.pop())),
           'data':       extracted[0] if len(extracted) == 1 else extracted
         })
 
       else:
         # Epic fail
-        return Token(None)
+        return _tokenFactory(None)
 
     else:
       # WTF?
