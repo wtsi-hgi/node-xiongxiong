@@ -31,6 +31,15 @@ def _b64decode(this):
   return base64.b64decode(this)
 
 
+# Get available hashing algorithms
+try:
+  # >= 2.7.9
+  availableHash = hashlib.algorithms_available
+except:
+  # >= 2.7
+  availableHash = hashlib.algorithms
+
+
 def _tokenFactory(authenticated):
   '''
   Build a Token class, based upon the function arguments in the closure,
@@ -49,6 +58,10 @@ def _tokenFactory(authenticated):
     weAreGood = True
 
   class Token(object):
+    def __dir__(self):
+      ''' Class members '''
+      return ['valid'] + authenticated.keys()
+
     def __getattribute__(self, name):
       ''' Fake attributes '''
       if name == 'valid':
@@ -63,11 +76,11 @@ def _tokenFactory(authenticated):
 
       else:
         # No such attribute
-        raise AttributeError
+        raise AttributeError('Object has no attribute \'%s\'' % name)
 
     def __setattr__(self, value, name):
       ''' We can't set any attribute values '''
-      raise AttributeError
+      raise AttributeError('Cannot set read-only attribute')
 
   return Token()
 
@@ -80,14 +93,7 @@ class Xiongxiong(object):
 
   def __init__(self, privateKey, algorithm = 'sha1'):
     # Check algorithm is supported
-    try:
-      # >= 2.7.9
-      available = hashlib.algorithms_available
-    except:
-      # >= 2.7
-      available = hashlib.algorithms
-
-    if algorithm not in available:
+    if algorithm not in availableHash:
       raise Exception('Unsupported hash algorithm \'%s\'' % algorithm)
 
     def getHMAC(message):
