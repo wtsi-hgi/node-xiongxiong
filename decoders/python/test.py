@@ -1,6 +1,5 @@
 '''
-Minimal testing harness for Python decoder
-This is NOT a full test suite
+Test suite for Python decoder
 
 AGPLv3 or later
 Copyright (c) 2015 Genome Research Limited
@@ -11,34 +10,59 @@ from subprocess import Popen, PIPE
 from datetime   import datetime
 from xiongxiong import Xiongxiong
 
-def getToken(data, privateKey):
-  js = '''
-  var xiongxiong = require('../../')('%s');
 
-  xiongxiong.encode(%s, function(err, token) {
-    console.log(token.accessToken);
-  });
-  ''' % (privateKey, json.dumps(data))
+class Token(object):
+  ''' Get token data to test against '''
+  def __init__(self, data, privateKey, lifetime = 3600, algorithm = 'sha1'):
+    jsonData = json.dumps(data);
 
-  echo = Popen(['echo', js], stdout = PIPE)
-  node = Popen('node', stdin = echo.stdout, stdout = PIPE)
+    echo     = Popen(['echo', jsonData], stdout = PIPE)
+    tokenise = Popen(['../getTestToken.js', privateKey, str(lifetime), algorithm],
+                     stdin = echo.stdout, stdout = PIPE)
 
-  return node.communicate()[0].strip()
+    output, err = tokenise.communicate()
 
-data = ['Hello', 'World!']
-key  = 'abc123'
+    if tokenise.returncode == 0:
+      output = json.loads(output)
 
-token = getToken(data, key)
-xiongxiong = Xiongxiong(key)
+      # Cast and set attributes of object
+      self.expiration    = datetime.fromtimestamp(output['expiration'])
+      self.accessToken   = str(output['accessToken'])
+      self.basicLogin    = str(output['basicLogin'])
+      self.basicPassword = str(output['basicPassword'])
 
-decoded = xiongxiong(token)
+    else:
+      raise Exception(err)
 
-if decoded.valid:
-  print('Passed: %s' % (decoded.data == data))
 
-  expiresIn = decoded.expiration - datetime.now()
-  print('Data:   %s' % decoded.data)
-  print('Expiry: T-%d seconds' % expiresIn.seconds)
+def test(id, data, privateKey, basic = False, lifetime = 3600, algorithm = 'sha1'):
+  ''' Generic testing function '''
+  xiongxiong = Xiongxiong(privateKey, algorithm)
+  encoded = Token(data, privateKey, lifetime, algorithm)
 
-else:
-  print('Passed: False')
+  if basic:
+    decoded = xiongxiong(encoded.basicLogin, encoded.basicPassword)
+  else:
+    decoded = xiongxiong(encoded.accessToken)
+
+  print('%s:' % id),
+
+  try:
+    assert decoded.valid, 'Token could not be validated'
+    assert decoded.data == data, 'Decoded token data does not match'
+    assert decoded.expiration == encoded.expiration, 'Token expiration does not match'
+  
+  except AssertionError as e:
+    print('Failed - %s' % e.message)
+
+  else:
+    print('Passed')
+
+
+# Tests
+# TODO Failing tests; non-trivial key
+test('String Data', 'foo bar', 'foo')
+test('Array Data', ['foo', 'bar'], 'foo')
+test('Basic Pair', 'foo bar', 'foo', basic = True)
+test('Hash Algorithm', 'foo bar', 'foo', algorithm = 'md5')
+test('Lifetime', 'foo bar', 'foo', lifetime = 100)
