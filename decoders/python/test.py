@@ -14,7 +14,7 @@ from xiongxiong import Xiongxiong
 class Token(object):
   ''' Get token data to test against '''
   def __init__(self, data, privateKey, lifetime = 3600, algorithm = 'sha1'):
-    jsonData = json.dumps(data);
+    jsonData = json.dumps(data)
 
     echo     = Popen(['echo', jsonData], stdout = PIPE)
     tokenise = Popen(['../getTestToken.js', privateKey, str(lifetime), algorithm],
@@ -35,7 +35,7 @@ class Token(object):
       raise Exception(err)
 
 
-def test(id, data, privateKey, basic = False, lifetime = 3600, algorithm = 'sha1'):
+def test(name, data, privateKey, basic = False, lifetime = 3600, algorithm = 'sha1'):
   ''' Generic testing function '''
   xiongxiong = Xiongxiong(privateKey, algorithm)
   encoded = Token(data, privateKey, lifetime, algorithm)
@@ -45,13 +45,13 @@ def test(id, data, privateKey, basic = False, lifetime = 3600, algorithm = 'sha1
   else:
     decoded = xiongxiong(encoded.accessToken)
 
-  print('%s:' % id),
+  print('%s:' % name),
 
   try:
     assert decoded.valid, 'Token could not be validated'
     assert decoded.data == data, 'Decoded token data does not match'
     assert decoded.expiration == encoded.expiration, 'Token expiration does not match'
-  
+
   except AssertionError as e:
     print('Failed - %s' % e.message)
 

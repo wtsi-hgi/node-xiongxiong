@@ -125,7 +125,7 @@ class Xiongxiong(object):
       basicLogin    = _b64decode(args[0])
       extracted     = basicLogin.split(':')
       basicPassword = args[1]
-      
+
       # Pass the salt
       extracted.pop()
 
