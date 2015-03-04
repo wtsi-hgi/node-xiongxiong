@@ -5,6 +5,7 @@ AGPLv3 or later
 Copyright (c) 2015 Genome Research Limited
 '''
 
+from __future__ import print_function
 import json
 from subprocess import Popen, PIPE
 from datetime   import datetime
@@ -23,16 +24,16 @@ class Token(object):
     output, err = tokenise.communicate()
 
     if tokenise.returncode == 0:
-      output = json.loads(output)
+      output = json.loads(output.decode())
 
-      # Cast and set attributes of object
+      # Set attributes of object
       self.expiration    = datetime.fromtimestamp(output['expiration'])
-      self.accessToken   = str(output['accessToken'])
-      self.basicLogin    = str(output['basicLogin'])
-      self.basicPassword = str(output['basicPassword'])
+      self.accessToken   = output['accessToken']
+      self.basicLogin    = output['basicLogin']
+      self.basicPassword = output['basicPassword']
 
     else:
-      raise Exception(err)
+      raise Exception(err.decode())
 
 
 def test(name, data, privateKey, basic = False, lifetime = 3600, algorithm = 'sha1'):
@@ -45,7 +46,7 @@ def test(name, data, privateKey, basic = False, lifetime = 3600, algorithm = 'sh
   else:
     decoded = xiongxiong(encoded.accessToken)
 
-  print('%s:' % name),
+  print('%s: ' % name, end = '')
 
   try:
     assert decoded.valid, 'Token could not be validated'
@@ -53,7 +54,7 @@ def test(name, data, privateKey, basic = False, lifetime = 3600, algorithm = 'sh
     assert decoded.expiration == encoded.expiration, 'Token expiration does not match'
 
   except AssertionError as e:
-    print('Failed - %s' % e.message)
+    print('Failed - %s' % e)
 
   else:
     print('Passed')

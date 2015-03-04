@@ -1,6 +1,6 @@
 # Xiongxiong Decoder
 
-Bearer token decoder for Python (>= 2.7).
+Bearer token decoder for Python (>= 2.7 and 3).
 
 ## `Xiongxiong` Class
 
@@ -15,13 +15,13 @@ xiongxiong = Xiongxiong(privateKey, 'md5')
 ```
 
 n.b., An exception will be thrown if the specified hashing algorithm is
-not supported. If you are using Python 2.7.9, or later, you will have
-access to all the algorithms supported by your platform's instance of
-OpenSSL; otherwise you are limited to MD5, SHA1, SHA224, SHA256, SHA384
-and SHA512.
+not supported. If you are using Python greater than 2.7.9 or 3.2, you
+will have access to all the algorithms supported by your platform's
+instance of OpenSSL; otherwise you are limited to MD5, SHA1, SHA224,
+SHA256, SHA384 and SHA512.
 
 Obviously, the private key and hashing algorithm must match those used
-by the encoder.
+by a token's encoder in order to successfully decode it.
 
 ### `xiongxiong(accessToken)`
 ### `xiongxiong(basicLogin, basicPassword)`

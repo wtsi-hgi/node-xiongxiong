@@ -23,19 +23,19 @@ def _stfu(fn):
 @_stfu
 def _b64encode(this):
   ''' Base64 encode '''
-  return base64.b64encode(this)
+  return base64.b64encode(this).decode()
 
 @_stfu
 def _b64decode(this):
   ''' Base64 decode '''
-  return base64.b64decode(this)
+  return base64.b64decode(this).decode()
 
 
 # Get available hashing algorithms
 try:
-  # >= 2.7.9
+  # >= 2.7.9 / >= 3.2
   availableHash = hashlib.algorithms_available
-except:
+except AttributeError:
   # >= 2.7
   availableHash = hashlib.algorithms
 
@@ -96,12 +96,20 @@ class Xiongxiong(object):
     if algorithm not in availableHash:
       raise Exception('Unsupported hash algorithm \'%s\'' % algorithm)
 
+    # Convert private key into binary data, if necessary
+    if type(privateKey) is str:
+      privateKey = privateKey.encode()
+
     def getHMAC(message):
       '''
       Create HMAC of message using the instantiation private key and
       hashing algorithm. This is created as a closure to protect the key
       from external access (say, if it were a class member)
       '''
+      # Convert message into binary data, if necessary
+      if type(message) is str:
+        message = message.encode()
+
       secureHash = getattr(hashlib, algorithm)
       authCode   = hmac.new(privateKey, message, secureHash)
       return _b64encode(authCode.digest())
@@ -116,7 +124,7 @@ class Xiongxiong(object):
       accessToken = _b64decode(args[0]).split(':')
 
       basicPassword = accessToken.pop()
-      basicLogin    = _b64encode(':'.join(accessToken))
+      basicLogin    = _b64encode(':'.join(accessToken).encode())
 
       return self(basicLogin, basicPassword)
 
