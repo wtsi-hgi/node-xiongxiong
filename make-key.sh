@@ -6,7 +6,7 @@
 # Copyright (c) 2014 Genome Research Limited
 
 read -r -d "" USAGE <<EOF
-Usage: make-key.sh [options]
+Usage: make-key.sh [OPTIONS]
 
 Options:
   -s SIZE     Key size, in bytes (default 256)

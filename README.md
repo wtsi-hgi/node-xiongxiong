@@ -130,7 +130,7 @@ NPM:
 Besides the codec for Node.js, [other decoders are available](decoders/)
 for different languages and environments:
 
-* Python
+* Python (2 and 3)
 
 n.b., These decoders are *not* available in the NPM repository, for
 brevity's sake, but can always be found on GitHub.
@@ -138,14 +138,34 @@ brevity's sake, but can always be found on GitHub.
 *Made a decoder for your favourite language? Then why not submit a pull
 request!*
 
+## Decoder Testing
+
+If you plan on writing a decoder, then the [`getTestToken.js`](decoders/getTestToken.js)
+script will be of interest to you. This is a tokeniser implementation,
+using Xiongxiong, that reads JSON from standard input and outputs the
+JSON token data (per the above) to standard output. It can thus be
+called easily to create tokens to test against with your own decoder
+implementations.
+
+    Usage:
+    getTestToken.js KEY [LIFETIME] [ALGORITHM]
+
+    Options:
+      KEY        The private key, in plain-text or a file path
+      LIFETIME   Token lifetime, in seconds (default 3600)
+      ALGORITHM  HMAC hashing algorithm (default sha1)
+
+Note that the JSON input must be a string or an array of strings.
+Otherwise, or if the tokeniser fails for any other reason, a non-zero
+exit code will be rendered.
+
 # `make-key.sh`
 
 A simple wrapper script around `dd` to create a private key file from
 `/dev/random`.
 
-## Usage
-
-    make-key.sh [options]
+    Usage:
+    make-key.sh [OPTIONS]
 
     Options:
       -s SIZE     Key size, in bytes (default 256)
