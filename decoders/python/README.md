@@ -2,6 +2,12 @@
 
 Bearer token decoder for Python (>= 2.7 and 3).
 
+## Installation
+
+Using `pip`:
+
+    pip install xiongxiong
+
 ## `Xiongxiong` Class
 
 The class *must* be instantiated with the private key and, optionally,
