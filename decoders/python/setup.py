@@ -9,7 +9,7 @@ with open(path.join(here, 'README.md'), encoding = 'utf-8') as f:
 
 setup(
   name    = 'xiongxiong',
-  version = '0.7.3',
+  version = '0.7.4',
 
   description      = 'Bearer token decoder',
   long_description = readme,

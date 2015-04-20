@@ -6,6 +6,7 @@ Copyright (c) 2015 Genome Research Limited
 '''
 
 from datetime import datetime
+import sys
 import base64
 import hashlib
 import hmac
@@ -97,8 +98,12 @@ class Xiongxiong(object):
       raise Exception('Unsupported hash algorithm \'%s\'' % algorithm)
 
     # Convert private key into binary data, if necessary
+    # This is horrible... :P
     if type(privateKey) is str:
-      privateKey = privateKey.encode()
+      if sys.version_info < (3, 0):
+        privateKey = bytes(privateKey)
+      else:
+        privateKey = bytes(privateKey, 'utf8')
 
     def getHMAC(message):
       '''

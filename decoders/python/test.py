@@ -7,6 +7,7 @@ Copyright (c) 2015 Genome Research Limited
 
 from __future__ import print_function
 import json
+import os.path
 from subprocess import Popen, PIPE
 from datetime   import datetime
 from xiongxiong import Xiongxiong
@@ -38,8 +39,13 @@ class Token(object):
 
 def test(name, data, privateKey, basic = False, lifetime = 3600, algorithm = 'sha1'):
   ''' Generic testing function '''
-  xiongxiong = Xiongxiong(privateKey, algorithm)
   encoded = Token(data, privateKey, lifetime, algorithm)
+
+  if os.path.exists(privateKey):
+    with open(privateKey, 'rb') as keyFile:
+      privateKey = keyFile.read()
+
+  xiongxiong = Xiongxiong(privateKey, algorithm)
 
   if basic:
     decoded = xiongxiong(encoded.basicLogin, encoded.basicPassword)
@@ -61,9 +67,9 @@ def test(name, data, privateKey, basic = False, lifetime = 3600, algorithm = 'sh
 
 
 # Tests
-# TODO Failing tests; non-trivial key
 test('String Data', 'foo bar', 'foo')
 test('Array Data', ['foo', 'bar'], 'foo')
 test('Basic Pair', 'foo bar', 'foo', basic = True)
 test('Hash Algorithm', 'foo bar', 'foo', algorithm = 'md5')
 test('Lifetime', 'foo bar', 'foo', lifetime = 100)
+test('Binary Key', 'foo', 'test.key')
